@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 import "../App.css";
 
 const ProductList = () => {
@@ -7,6 +8,10 @@ const ProductList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage] = useState(10);
+  const [cart, setCart] = useState(() => {
+    const storedCart = localStorage.getItem("cart");
+    return storedCart ? JSON.parse(storedCart) : [];
+  });
 
   useEffect(() => {
     axios
@@ -15,12 +20,18 @@ const ProductList = () => {
       .catch((error) => console.error("Error fetching products:", error));
   }, []);
 
-  // Filter products based on search term
+  const addToCartHandler = (product) => {
+    if (!cart.some((cartItem) => cartItem.id === product.id)) {
+      const updatedCart = [...cart, product];
+      setCart(updatedCart);
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    }
+  };
+
   const filteredProducts = products.filter((product) =>
     product.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination logic
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = filteredProducts.slice(
@@ -53,20 +64,9 @@ const ProductList = () => {
           </div>
         </div>
         <div className="header-right d-flex align-items-center">
-          <img
-            src="https://via.placeholder.com/40"
-            alt="User Profile"
-            className="rounded-circle"
-          />
-          <span className="ms-2">User Name</span>
-          <div className="cart-icon ms-3">
-            <button className="btn btn-secondary position-relative">
-              🛒
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                0
-              </span>
-            </button>
-          </div>
+          <Link to="/cart" className="btn btn-secondary">
+            🛒 Cart <span>({cart.length})</span>
+          </Link>
         </div>
       </header>
 
@@ -84,7 +84,12 @@ const ProductList = () => {
               <p className="rating">⭐ {product.rating}</p>
               <div className="price-and-button d-flex justify-content-between align-items-center">
                 <p className="price">${product.price}</p>
-                <button className="btn btn-sm btn-secondary">Add to Cart</button>
+                <button
+                  onClick={() => addToCartHandler(product)}
+                  className="btn btn-sm btn-secondary"
+                >
+                  Add to Cart
+                </button>
               </div>
             </div>
           </div>
